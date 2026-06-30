@@ -1,0 +1,86 @@
+{
+  "name": "ansi-colors",
+  "displayName": "ANSI Colors",
+  "description": "Render ANSI SGR colors and styles in a VS Code preview without showing escape sequences.",
+  "version": "0.0.1",
+  "publisher": "local",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:ansiColors.openPreview",
+    "onCommand:ansiColors.toggleInlineColors",
+    "onCustomEditor:ansiColors.logPreview"
+  ],
+  "main": "./out/src/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "ansiColors.openPreview",
+        "title": "ANSI Colors: Open Preview",
+        "category": "ANSI Colors"
+      },
+      {
+        "command": "ansiColors.toggleInlineColors",
+        "title": "ANSI Colors: Toggle Inline Colors",
+        "category": "ANSI Colors"
+      }
+    ],
+    "customEditors": [
+      {
+        "viewType": "ansiColors.logPreview",
+        "displayName": "ANSI Colors Log Preview",
+        "selector": [
+          {
+            "filenamePattern": "*.log"
+          },
+          {
+            "filenamePattern": "*.ansi"
+          }
+        ],
+        "priority": "default"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "ansiColors.openPreview",
+          "group": "navigation",
+          "when": "editorTextFocus"
+        },
+        {
+          "command": "ansiColors.toggleInlineColors",
+          "group": "navigation",
+          "when": "editorTextFocus"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "ansiColors.openPreview",
+          "group": "navigation",
+          "when": "editorTextFocus"
+        },
+        {
+          "command": "ansiColors.toggleInlineColors",
+          "group": "navigation",
+          "when": "editorTextFocus"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "test": "npm run compile && node ./out/test/ansiHtml.test.js",
+    "vscode:prepublish": "npm run compile"
+  },
+  "devDependencies": {
+    "@types/node": "^18.19.0",
+    "@types/vscode": "^1.90.0",
+    "typescript": "^5.4.5"
+  }
+}
