@@ -3,7 +3,32 @@ export interface RenderOptions {
   readonly background?: string;
 }
 
-interface AnsiStyle {
+export interface AnsiStyleSpan {
+  readonly start: number;
+  readonly end: number;
+  readonly style: CssStyle;
+}
+
+export interface AnsiEscapeSpan {
+  readonly start: number;
+  readonly end: number;
+}
+
+export interface ParsedAnsi {
+  readonly styleSpans: AnsiStyleSpan[];
+  readonly escapeSpans: AnsiEscapeSpan[];
+}
+
+export interface CssStyle {
+  readonly color?: string;
+  readonly backgroundColor?: string;
+  readonly fontWeight?: string;
+  readonly fontStyle?: string;
+  readonly opacity?: string;
+  readonly textDecoration?: string;
+}
+
+interface AnsiState {
   foreground?: string;
   background?: string;
   bold: boolean;
@@ -14,7 +39,7 @@ interface AnsiStyle {
   strike: boolean;
 }
 
-const defaultStyle: AnsiStyle = {
+const defaultStyle: AnsiState = {
   bold: false,
   faint: false,
   italic: false,
@@ -46,18 +71,17 @@ const brightColors = [
 ];
 
 export function ansiToHtml(input: string, options: RenderOptions = {}): string {
-  const state: AnsiStyle = { ...defaultStyle };
+  const state: AnsiState = { ...defaultStyle };
   const chunks: string[] = [];
   let activeCss = '';
   let cursor = 0;
-  const sgrPattern = /\x1b\[([0-9;:]*)m/g;
 
-  for (const match of input.matchAll(sgrPattern)) {
-    const index = match.index ?? 0;
+  for (const match of findSgrSequences(input)) {
+    const index = match.start;
     appendText(input.slice(cursor, index));
-    applySgr(state, parseSgr(match[1]));
+    applySgr(state, parseSgr(match.codes));
     activeCss = syncSpan(chunks, activeCss, styleToCss(state, options));
-    cursor = index + match[0].length;
+    cursor = match.end;
   }
 
   appendText(input.slice(cursor));
@@ -75,6 +99,56 @@ export function ansiToHtml(input: string, options: RenderOptions = {}): string {
     activeCss = syncSpan(chunks, activeCss, css);
     chunks.push(escapeHtml(stripUnsupportedAnsi(text)));
   }
+}
+
+export function parseAnsi(input: string, options: RenderOptions = {}): ParsedAnsi {
+  const state: AnsiState = { ...defaultStyle };
+  const styleSpans: AnsiStyleSpan[] = [];
+  const escapeSpans: AnsiEscapeSpan[] = [];
+  let cursor = 0;
+
+  for (const match of findSgrSequences(input)) {
+    appendStyledSpan(cursor, match.start);
+    escapeSpans.push({ start: match.start, end: match.end });
+    applySgr(state, parseSgr(match.codes));
+    cursor = match.end;
+  }
+
+  appendStyledSpan(cursor, input.length);
+  return { styleSpans, escapeSpans };
+
+  function appendStyledSpan(start: number, end: number): void {
+    if (start >= end) {
+      return;
+    }
+    const style = stateToCssStyle(state, options);
+    if (Object.keys(style).length === 0) {
+      return;
+    }
+    styleSpans.push({ start, end, style });
+  }
+}
+
+interface SgrSequence {
+  readonly start: number;
+  readonly end: number;
+  readonly codes: string;
+}
+
+function findSgrSequences(input: string): SgrSequence[] {
+  const sequences: SgrSequence[] = [];
+  const sgrPattern = /\x1b\[([0-9;:]*)m/g;
+
+  for (const match of input.matchAll(sgrPattern)) {
+    const start = match.index ?? 0;
+    sequences.push({
+      start,
+      end: start + match[0].length,
+      codes: match[1]
+    });
+  }
+
+  return sequences;
 }
 
 function syncSpan(chunks: string[], activeCss: string, nextCss: string): string {
@@ -102,7 +176,7 @@ function parseSgr(raw: string): number[] {
     .map((value) => Number.isNaN(value) ? 0 : value);
 }
 
-function applySgr(state: AnsiStyle, codes: number[]): void {
+function applySgr(state: AnsiState, codes: number[]): void {
   for (let i = 0; i < codes.length; i += 1) {
     const code = codes[i];
 
@@ -165,32 +239,38 @@ function applySgr(state: AnsiStyle, codes: number[]): void {
   }
 }
 
-function resetStyle(state: AnsiStyle): void {
+function resetStyle(state: AnsiState): void {
   delete state.foreground;
   delete state.background;
   Object.assign(state, defaultStyle);
 }
 
-function styleToCss(style: AnsiStyle, options: RenderOptions): string {
-  const declarations: string[] = [];
+function styleToCss(style: AnsiState, options: RenderOptions): string {
+  return Object.entries(stateToCssStyle(style, options))
+    .map(([key, value]) => `${camelToKebab(key)}: ${value}`)
+    .join('; ');
+}
+
+function stateToCssStyle(style: AnsiState, options: RenderOptions): CssStyle {
+  const declarations: Record<string, string> = {};
   const foreground = style.inverse ? style.background ?? options.background : style.foreground;
   const background = style.inverse ? style.foreground ?? options.foreground : style.background;
   const decorations: string[] = [];
 
   if (foreground) {
-    declarations.push(`color: ${foreground}`);
+    declarations.color = foreground;
   }
   if (background) {
-    declarations.push(`background-color: ${background}`);
+    declarations.backgroundColor = background;
   }
   if (style.bold) {
-    declarations.push('font-weight: 700');
+    declarations.fontWeight = '700';
   }
   if (style.faint) {
-    declarations.push('opacity: 0.75');
+    declarations.opacity = '0.75';
   }
   if (style.italic) {
-    declarations.push('font-style: italic');
+    declarations.fontStyle = 'italic';
   }
   if (style.underline) {
     decorations.push('underline');
@@ -199,10 +279,14 @@ function styleToCss(style: AnsiStyle, options: RenderOptions): string {
     decorations.push('line-through');
   }
   if (decorations.length > 0) {
-    declarations.push(`text-decoration: ${decorations.join(' ')}`);
+    declarations.textDecoration = decorations.join(' ');
   }
 
-  return declarations.join('; ');
+  return declarations;
+}
+
+function camelToKebab(value: string): string {
+  return value.replace(/[A-Z]/g, (character) => `-${character.toLowerCase()}`);
 }
 
 function xterm256ToHex(value: number): string {

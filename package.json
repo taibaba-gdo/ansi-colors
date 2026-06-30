@@ -12,7 +12,9 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:ansiColors.openPreview"
+    "onCommand:ansiColors.openPreview",
+    "onCommand:ansiColors.toggleInlineColors",
+    "onCustomEditor:ansiColors.logPreview"
   ],
   "main": "./out/src/extension.js",
   "contributes": {
@@ -21,6 +23,26 @@
         "command": "ansiColors.openPreview",
         "title": "ANSI Colors: Open Preview",
         "category": "ANSI Colors"
+      },
+      {
+        "command": "ansiColors.toggleInlineColors",
+        "title": "ANSI Colors: Toggle Inline Colors",
+        "category": "ANSI Colors"
+      }
+    ],
+    "customEditors": [
+      {
+        "viewType": "ansiColors.logPreview",
+        "displayName": "ANSI Colors Log Preview",
+        "selector": [
+          {
+            "filenamePattern": "*.log"
+          },
+          {
+            "filenamePattern": "*.ansi"
+          }
+        ],
+        "priority": "default"
       }
     ],
     "menus": {
@@ -29,11 +51,21 @@
           "command": "ansiColors.openPreview",
           "group": "navigation",
           "when": "editorTextFocus"
+        },
+        {
+          "command": "ansiColors.toggleInlineColors",
+          "group": "navigation",
+          "when": "editorTextFocus"
         }
       ],
       "editor/context": [
         {
           "command": "ansiColors.openPreview",
+          "group": "navigation",
+          "when": "editorTextFocus"
+        },
+        {
+          "command": "ansiColors.toggleInlineColors",
           "group": "navigation",
           "when": "editorTextFocus"
         }

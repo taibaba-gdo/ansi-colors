@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { ansiToHtml } from '../src/ansiHtml';
+import { ansiToHtml, parseAnsi } from '../src/ansiHtml';
 
 assert.strictEqual(
   ansiToHtml('plain'),
@@ -34,6 +34,31 @@ assert.strictEqual(
 assert.strictEqual(
   ansiToHtml('hide\x1b[2K line'),
   'hide line'
+);
+
+assert.deepStrictEqual(
+  parseAnsi('a \x1b[31mred\x1b[0m z'),
+  {
+    styleSpans: [
+      {
+        start: 7,
+        end: 10,
+        style: {
+          color: '#cd3131'
+        }
+      }
+    ],
+    escapeSpans: [
+      {
+        start: 2,
+        end: 7
+      },
+      {
+        start: 10,
+        end: 14
+      }
+    ]
+  }
 );
 
 console.log('ansiHtml tests passed');
