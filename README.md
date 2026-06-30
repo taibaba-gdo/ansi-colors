@@ -1,34 +1,56 @@
 # ANSI Colors
 
-VS Code extension that previews ANSI SGR colors and styles without displaying raw escape sequences.
+ANSI SGR の色や装飾を、エスケープシーケンスをそのまま表示せずに VS Code 上で確認するための拡張機能です。
 
-## Usage
+## インストール
 
-### Automatic log preview
+### VSIX からインストール
 
-Open a `*.log` or `*.ansi` file. VS Code opens it with `ANSI Colors Log Preview` by default, rendering ANSI colors in a read-only preview.
+```sh
+npm install
+npm run compile
+npx @vscode/vsce package
+code --install-extension ansi-colors-0.0.1.vsix
+```
 
-Use `Reopen Editor With...` if you need to switch between the ANSI preview and the raw text editor.
+VS Code の画面から入れる場合は、Extensions view の `...` メニューから `Install from VSIX...` を選び、生成された `ansi-colors-0.0.1.vsix` を指定してください。
 
-### Manual preview
-
-1. Open a text file that contains ANSI escape sequences.
-2. Run `ANSI Colors: Open Preview` from the Command Palette, editor title menu, or editor context menu.
-3. The preview opens beside the active editor and updates as the document changes.
-
-### Inline editor colors
-
-Run `ANSI Colors: Toggle Inline Colors` from the Command Palette, editor title menu, or editor context menu.
-
-Inline mode uses VS Code editor decorations to color ANSI ranges and visually hide SGR escape sequences. It does not rewrite or save modified file contents.
-
-Supported sequences include reset, bold, faint, italic, underline, inverse, strike-through, standard 8/16 colors, 256-color mode, and truecolor RGB SGR colors.
-
-## Development
+### 開発環境で試す
 
 ```sh
 npm install
 npm test
 ```
 
-Press `F5` in VS Code to launch an Extension Development Host, then run `ANSI Colors: Open Preview`.
+その後、VS Code でこのリポジトリを開き、`F5` を押して Extension Development Host を起動してください。
+
+## 使い方
+
+### ログファイルの自動プレビュー
+
+`*.log` または `*.ansi` ファイルを開くと、既定では `ANSI Colors Log Preview` として開かれます。ANSI の色や装飾を反映した読み取り用プレビューで表示します。
+
+生のテキストエディタとして開きたい場合は、VS Code の `Reopen Editor With...` から通常のテキストエディタに切り替えてください。
+
+### 手動プレビュー
+
+1. ANSI エスケープシーケンスを含むテキストファイルを開きます。
+2. Command Palette、エディタタイトルメニュー、またはエディタのコンテキストメニューから `ANSI Colors: Open Preview` を実行します。
+3. 現在のエディタの隣にプレビューが開き、ドキュメントの変更に追従して更新されます。
+
+### エディタ内インライン表示
+
+Command Palette、エディタタイトルメニュー、またはエディタのコンテキストメニューから `ANSI Colors: Toggle Inline Colors` を実行します。
+
+インライン表示は VS Code の decoration を使って ANSI の範囲を色付けし、SGR エスケープシーケンスを視覚的に隠します。ファイル本文を書き換えたり、保存内容を変更したりはしません。
+
+## 対応している ANSI シーケンス
+
+reset、bold、faint、italic、underline、inverse、strike-through、標準 8/16 色、256 色、truecolor RGB の SGR 色指定に対応しています。
+
+## 開発
+
+```sh
+npm install
+npm test
+```
